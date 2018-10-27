@@ -1,0 +1,7 @@
+INFILE=/home/tomek/uw-workspace/pul/abc_par.ncd
+OUTFILE=/home/tomek/uw-workspace/pul/abc_par.bit
+FAMILY=Spartan3E
+PART=xc3s100e-4cp132
+WORKINGDIR=/home/tomek/uw-workspace/pul
+LICENSE=WebPack
+USER_INFO=211621182_0_0_030
