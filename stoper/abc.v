@@ -123,7 +123,9 @@ endmodule
 
 module abc(
     input mclk,
-    input [7:0] sw,
+    input uclk,
+    input clk_select,
+    input [4:0] sw,
     input [3:0] btn,
     output reg[2:0] led,
     output [6:0] seg,
@@ -137,22 +139,34 @@ parameter D_STOP = 3'b100;
 integer disp = 0;
 reg[31:0] state = 0;
 reg[31:0] step;
-reg[2:0] dir = D_UP; 
+reg[2:0] dir = D_STOP; 
+wire clk;
 
-always @(posedge mclk) begin
-    step = 1 << sw[4:0];
+reg[4:0] sw1, switch;
+reg[3:0] btn1, button;
+
+BUFGMUX clk_buf(.I0(mclk), .I1(uclk), .S(clk_select), .O(clk));
+
+always @(posedge clk) begin
+    sw1 <= sw;
+    switch <= sw1;
+    btn1 <= btn;
+    button <= btn1;
+
+    step = 1 << switch;
     state = state + 1;
-    if (btn[3]) begin
+
+    if (button[3]) begin
         disp = 0;
         state = 0;
-        dir = D_UP;
-    end
-    if (btn[2])
         dir = D_STOP;
-    else if (btn[1])
+    else if (button[2])
+        dir = D_STOP;
+    else if (button[1])
         dir = D_UP;
-    else if (btn[0])
+    else if (button[0])
         dir = D_DOWN;
+
     if (state >= step) begin
         state = 0;
         case (dir)
@@ -164,11 +178,11 @@ always @(posedge mclk) begin
             disp = disp;
         endcase
     end
+
     led[2] = (disp == 9999 && dir == D_UP) || (disp == 0 && dir == D_DOWN);
     led[1] = dir == D_UP;
     led[0] = dir == D_DOWN;
 end
-
 
 display d1(
     .clk(mclk),
