@@ -71,16 +71,30 @@ module display(
 integer s = 0;
 integer num = 0;
 
-reg [3:0] digits [1:0];
+wire [3:0] digits [3:0];
+wire [13:0] connect [4:0];
+
+assign connect[0] = number;
+
+genvar i;
+generate
+    for (i = 0; i < 4; i = i + 1) begin : gen_d
+        div #(.BITS(14)) d0(
+            .dividend(connect[i]),
+            .divisor(10),
+            .quotient(connect[i+1]),
+            .remainder(digits[i])
+        );
+    end
+endgenerate
 
 always @(posedge clk) begin
     s = s + 1;
-    digits[0] = num;
     case (s)
     0 : an = 4'b1111;
     100 : begin
         an = ~(1<<num);
-        case (digits[0])
+        case (digits[num])
             0: seg = 7'h40;
             1: seg = 7'h79;
             2: seg = 7'h24;
