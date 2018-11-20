@@ -61,47 +61,79 @@ assign remainder = r[BITS-1];
 
 endmodule
 
-
-module abc(
-    input [7:0] sw,
-    input [3:0] btn,
-    output reg[7:0] led,
+module display(
+    input clk,
+    input [13:0] number,
     output reg[6:0] seg,
     output reg[3:0] an
 );
 
-reg [13:0] state;
-reg 
+integer s = 0;
+integer num = 0;
 
-wire [3:0] q;
-wire [3:0] r;
+reg [3:0] digits [1:0];
 
-always @(mclk) begin
-    case (btn)
-    4'b0001 : begin
-        led[7:4] = sw[7:4] + sw[3:0];
-        led[3:0] = sw[7:4] - sw[3:0]; 
+always @(posedge clk) begin
+    s = s + 1;
+    digits[0] = num;
+    case (s)
+    0 : an = 4'b1111;
+    100 : begin
+        an = ~(1<<num);
+        case (digits[0])
+            0: seg = 7'h40;
+            1: seg = 7'h79;
+            2: seg = 7'h24;
+            3: seg = 7'h30;
+            4: seg = 7'h19;
+            5: seg = 7'h12;
+            6: seg = 7'h02;
+            7: seg = 7'h78;
+            8: seg = 7'h00;
+            9: seg = 7'h10;
+        endcase
     end
-    4'b0010 : if (sw[7:4] > sw[3:0]) 
-        begin
-            led[7:4] = sw[3:0];
-            led[3:0] = sw[7:4];
-        end
-        else begin
-            led[7:4] = sw[7:4];
-            led[3:0] = sw[3:0];
-        end
-    4'b0100 : begin
-        led[7:0] = sw[7:4] * sw[3:0];
+    900 : begin
+        an = 4'b1111;
+        if (num == 3) 
+            num = 0; 
+        else 
+            num = num + 1;
     end
-    4'b1000 : begin
-        led[7:4] = q;
-        led[3:0] = r;
-    end
-    default : begin
-        led = 8'b00000000;
-    end
+    1000 : s = 0;
     endcase
 end
+
+endmodule
+
+
+module abc(
+    input mclk,
+    input [7:0] sw,
+    input [3:0] btn,
+    output reg[7:0] led,
+    output [6:0] seg,
+    output [3:0] an
+);
+
+// reg [13:0] disp;
+// reg [31:0] state;
+
+// wire [31:0] q;
+// wire [31:0] r;
+
+always @(sw, btn) begin
+    case (btn)
+    default :
+        led = sw;
+    endcase
+end
+
+display d1(
+    .clk(mclk),
+    .number(1682),
+    .seg(seg),
+    .an(an)
+);
 
 endmodule

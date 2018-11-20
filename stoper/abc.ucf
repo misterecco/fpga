@@ -26,7 +26,7 @@ NET "btn<0>" LOC = "G12";  # Bank = 3, Signal name = BTN0
 
 # Clock
 NET "mclk" LOC = "B8"; # Bank = 0, Signal name = MCLK
-NET "uclk" LOC = "M6"; # Bank = 2, Signal name = UCLK
+# NET "uclk" LOC = "M6"; # Bank = 2, Signal name = UCLK
 
 # Pin assignment for 7-segment display
 NET "seg<0>" LOC = "L14"; # Bank = 1, Signal name = CA
@@ -36,7 +36,7 @@ NET "seg<3>" LOC = "N11"; # Bank = 2, Signal name = CD
 NET "seg<4>" LOC = "P12"; # Bank = 2, Signal name = CE
 NET "seg<5>" LOC = "L13"; # Bank = 1, Signal name = CF
 NET "seg<6>" LOC = "M12"; # Bank = 1, Signal name = CG
-NET "dp" LOC = "N13"; # Bank = 1, Signal name = DP
+# NET "dp" LOC = "N13"; # Bank = 1, Signal name = DP
 
 NET "an<3>" LOC = "K14"; # Bank = 1, Signal name = AN3
 NET "an<2>" LOC = "M13"; # Bank = 1, Signal name = AN2
