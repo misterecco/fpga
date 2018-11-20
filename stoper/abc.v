@@ -92,8 +92,8 @@ always @(posedge clk) begin
     s = s + 1;
     case (s)
     0 : an = 4'b1111;
-    100 : begin
-        an = ~(1<<num);
+    10 : begin
+        an = ~(1 << num);
         case (digits[num])
             0: seg = 7'h40;
             1: seg = 7'h79;
@@ -107,14 +107,14 @@ always @(posedge clk) begin
             9: seg = 7'h10;
         endcase
     end
-    900 : begin
+    90 : begin
         an = 4'b1111;
         if (num == 3) 
             num = 0; 
         else 
             num = num + 1;
     end
-    1000 : s = 0;
+    100 : s = 0;
     endcase
 end
 
@@ -125,27 +125,54 @@ module abc(
     input mclk,
     input [7:0] sw,
     input [3:0] btn,
-    output reg[7:0] led,
+    output reg[2:0] led,
     output [6:0] seg,
     output [3:0] an
 );
 
-// reg [13:0] disp;
-// reg [31:0] state;
+parameter D_UP = 3'b001;
+parameter D_DOWN = 3'b010;
+parameter D_STOP = 3'b100;
 
-// wire [31:0] q;
-// wire [31:0] r;
+integer disp = 0;
+reg[31:0] state = 0;
+reg[31:0] step;
+reg[2:0] dir = D_UP; 
 
-always @(sw, btn) begin
-    case (btn)
-    default :
-        led = sw;
-    endcase
+always @(posedge mclk) begin
+    step = 1 << sw[4:0];
+    state = state + 1;
+    if (btn[3]) begin
+        disp = 0;
+        state = 0;
+        dir = D_UP;
+    end
+    if (btn[2])
+        dir = D_STOP;
+    else if (btn[1])
+        dir = D_UP;
+    else if (btn[0])
+        dir = D_DOWN;
+    if (state >= step) begin
+        state = 0;
+        case (dir)
+        D_UP:
+            disp = disp == 9999 ? 9999 : disp + 1;
+        D_DOWN:
+            disp = disp == 0 ? 0 : disp - 1;
+        default:
+            disp = disp;
+        endcase
+    end
+    led[2] = (disp == 9999 && dir == D_UP) || (disp == 0 && dir == D_DOWN);
+    led[1] = dir == D_UP;
+    led[0] = dir == D_DOWN;
 end
+
 
 display d1(
     .clk(mclk),
-    .number(1682),
+    .number(disp),
     .seg(seg),
     .an(an)
 );
