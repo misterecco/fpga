@@ -32,6 +32,7 @@ reg stack_push;
 reg stack_pop;
 reg stack_reset = 1;
 reg [7:0] init = 8'b00000001;
+wire stack_vld;
 
 integer state = BOOT;
 
@@ -96,6 +97,7 @@ stack st(
     .size(stack_size),
     .top(stack_top),
     .error(stack_error),
+    .out_vld(stack_vld),
     .reset(stack_reset),
     .clk(clk)
 );
