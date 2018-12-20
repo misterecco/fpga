@@ -1,2 +1,4 @@
 verilog work "calc.v"
-verilog work "div.v"
+verilog work "display.v"
+verilog work "stack.v"
+verilog work "sync.v"

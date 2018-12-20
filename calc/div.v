@@ -1,62 +1,66 @@
 `default_nettype none
 
-module div_single(dividend, divisor, quotient, remainder);
+module dzielacz(A_IN, A_OUT, Q, B);
 
-parameter DIVIDEND_BITS = 4;
-parameter DIVISOR_BITS = 4;
+parameter IDX = 4;
 
-input wire [DIVIDEND_BITS-1:0] dividend;
-input wire [DIVISOR_BITS-1:0] divisor;
-output reg quotient;
-output reg [DIVIDEND_BITS-1:0] remainder;
+input wire [IDX-1:0] A_IN;
+output reg [IDX-1:0] A_OUT:
+output reg Q;
+input wire [IDX-1:0] B;
 
-always @(dividend, divisor) begin
-    if (dividend >= divisor) begin
-        quotient = 1;
-        remainder = dividend - divisor;
-    end 
-    else begin
-        quotient = 0;
-        remainder = dividend;
+always @(A_IN, B) begin
+    if (A_IN >= B) begin
+        Q = 1;
+        A_OUT = A_IN - B;
     end
-end
-
+    else begin
+        Q = 0;
+        A_OUT = A_IN;
+    end
 endmodule
 
 
-module div(dividend, divisor, quotient, remainder);
+module div(A, B, Q, R, input_vld, output_vld, clk);
 
 parameter BITS = 4;
 
-input wire [BITS-1:0] dividend;
-input wire [BITS-1:0] divisor;
-output wire [BITS-1:0] quotient;
-output wire [BITS-1:0] remainder;
+input wire [BITS-1:0] A;
+input wire [BITS-1:0] B;
+output wire [BITS-1:0] Q; // A / B
+output wire [BITS-1:0] R; // A % B
+input wire input_vld; // 1 jeśli ktoś przesyła nam nowe liczby do dzielenia
+output wire output_vld; // 1 jeśli skończyliśmy dzielenie
+input wire clk;
 
-wire [BITS-1:0] r [0:BITS-1];
+reg [$clog2(BITS)-1:0] bitidx = 0;
+reg active = 0;
+reg [BITS-1:0] tmp_a;
+reg [BITS-1:0] tmp_q;
+assign R = tmp_a;
+assign Q = tmp_q;
+assign output_vld = !active;
 
-genvar i;
-generate
-    for (i = 0; i < BITS; i = i + 1) begin : gen_ds
-        if (i == 0) begin
-            div_single #(.DIVISOR_BITS(BITS), .DIVIDEND_BITS(i+1)) ds(
-                .dividend(dividend[BITS-1]),
-                .divisor(divisor),
-                .quotient(quotient[BITS-1]),
-                .remainder(r[0][BITS-1])
-            );
+wire q1;
+wire [BITS-1:0] out;
+
+div1 dzielacz(.A_IN(tmp_a[i]), .A_OUT(out), .Q(q1), .B(B), IDX(bitidx));
+
+always @(posedge clk) begin
+    if (!active) begin
+        if (input_vld) begin
+            tmp_a <= A;
+            tmp_q <= 0;
+            active <= 1;
+            bitidx <= BITS - 1;
         end
-        else begin
-            div_single #(.DIVISOR_BITS(BITS), .DIVIDEND_BITS(i+1)) ds(
-                .dividend({r[i-1][BITS-1:BITS-i], dividend[BITS-1-i]}),
-                .divisor(divisor),
-                .quotient(quotient[BITS-1-i]),
-                .remainder(r[i][BITS-1:BITS-1-i])
-            );
-        end
+    end else begin
+        tmp_a <= out;
+        tmp_q[bitidx] <= q1;
+        if (bitidx == 0)
+            active <= 0;
+        bitidx <= bitidx - 1;
     end
-endgenerate
+end
 
-assign remainder = r[BITS-1];
-
-endmodule
+endmodule;

@@ -1,135 +1,110 @@
 `default_nettype none
 
-module display(
-    input clk,
-    input [13:0] number,
-    output reg[6:0] seg,
-    output reg[3:0] an
-);
-
-integer s = 0;
-integer num = 0;
-
-wire [3:0] digits [3:0];
-wire [13:0] connect [4:0];
-
-assign connect[0] = number;
-
-genvar i;
-generate
-    for (i = 0; i < 4; i = i + 1) begin : gen_d
-        div #(.BITS(14)) d0(
-            .dividend(connect[i]),
-            .divisor(10),
-            .quotient(connect[i+1]),
-            .remainder(digits[i])
-        );
-    end
-endgenerate
-
-always @(posedge clk) begin
-    s <= s + 1;
-    case (s)
-    0 : begin
-        an <= 4'b1111;
-        case (digits[num])
-            0: seg <= 7'h40;
-            1: seg <= 7'h79;
-            2: seg <= 7'h24;
-            3: seg <= 7'h30;
-            4: seg <= 7'h19;
-            5: seg <= 7'h12;
-            6: seg <= 7'h02;
-            7: seg <= 7'h78;
-            8: seg <= 7'h00;
-            9: seg <= 7'h10;
-        endcase
-    end
-    10 : an <= ~(1 << num);
-    90 : begin
-        an <= 4'b1111;
-        if (num == 3) 
-            num <= 0; 
-        else 
-            num <= num + 1;
-    end
-    100 : s <= 0;
-    endcase
-end
-
-endmodule
-
-
 module calc(
-    input mclk,
-    input uclk,
-    input clk_select,
-    input [4:0] sw,
+    input clk,
+    input [7:0] sw,
     input [3:0] btn,
-    output [2:0] led,
+    output [7:0] led,
     output [6:0] seg,
     output [3:0] an
 );
 
-parameter D_UP = 3'b001;
-parameter D_DOWN = 3'b010;
-parameter D_STOP = 3'b100;
+wire [7:0] sw_sync;
+wire [3:0] btn_sync;
 
-integer disp = 0;
-reg[31:0] counter = 0;
-reg[31:0] step;
-reg[2:0] state = D_STOP; 
-wire clk;
+sync #(.BITS(8)) swsyn(.in(sw), .out(sw_sync), .clk(clk));
+sync #(.BITS(4)) btnsyn(.in(btn), .out(btn_sync), .clk(clk));
 
-reg[4:0] sw1, switch;
-reg[3:0] btn1, button;
-reg cl1, clock_selector = 0;
+parameter BOOT = 1;
+parameter IDLE = 2;
+parameter RESET = 3;
+parameter PUSH = 4;
+parameter APPEND = 5;
+parameter POP = 6;
 
-BUFGMUX clk_buf(.I0(mclk), .I1(uclk), .S(clock_selector), .O(clk));
+wire [31:0] stack_top;
+wire stack_error;
+wire [9:0] stack_size;
+wire stack_empty;
+reg [31:0] stack_in;
+reg [31:0] num_a;
+reg stack_push;
+reg stack_pop;
+reg stack_reset = 1;
+reg [7:0] init = 8'b00000001;
+
+integer state = BOOT;
+
+assign stack_empty = stack_size == 0;
+assign led[7] = stack_error;
+assign led[6:0] = stack_size[6:0];
 
 always @(posedge clk) begin
-    sw1 <= sw;
-    switch <= sw1;
-    btn1 <= btn;
-    button <= btn1;
-    cl1 <= clk_select;
-    clock_selector <= cl1;
-end
-
-always @(posedge clk) begin
-    if (button[3]) begin
-        disp <= 0;
-        counter <= 0;
-        state <= D_STOP;
-    end else begin
-        if (button[2]) 
-            state <= D_STOP;
-        else if (button[1]) 
-            state <= D_UP;
-        else if (button[0])
-            state <= D_DOWN;
-        if (counter >= (1 << switch) - 1) begin
-            counter <= 0;
-            case (state)
-            D_UP:
-                disp <= disp == 9999 ? 9999 : disp + 1;
-            D_DOWN:
-                disp <= disp == 0 ? 0 : disp - 1;
+    if (btn_sync[0] && btn_sync[3]) begin
+        stack_reset <= 1;
+        state <= RESET;
+    end else case (state)
+        BOOT: 
+            if (init[7]) begin 
+                state <= IDLE;
+                stack_reset <= 0;
+            end
+            else init <= (init << 1);
+        RESET: begin
+            state <= IDLE;
+            stack_reset <= 0;
+        end
+        PUSH: begin
+            stack_push <= 0;
+            if (!btn_sync[1] && !btn_sync[2]) state <= IDLE;
+        end
+        POP: begin
+            stack_pop <= 0;
+            if (!btn_sync[3]) state <= IDLE;
+        end
+        APPEND: begin
+            state <= PUSH;
+            stack_push <= 1;
+            stack_pop <= 0;
+        end
+        IDLE: if (btn_sync[1]) begin
+            state <= PUSH;
+            stack_push <= 1;
+            stack_in <= {{24{0}},sw_sync};
+        // TODO: handle empty stack
+        end else if (btn_sync[2]) begin
+            state <= APPEND;
+            stack_in <= {stack_top[23:0],sw};
+            stack_pop <= 1;
+        end else if (btn_sync[3]) begin
+            case (sw[2:0])
+                3'b101: begin
+                    stack_pop <= 1;
+                    state <= POP;
+                end
             endcase
-        end 
-        else
-            counter <= counter + 1;
-    end
+        end
+
+
+    endcase
 end
 
-assign led[2] = (disp == 9999 && state == D_UP) || (disp == 0 && state == D_DOWN);
-assign led[1] = state == D_UP;
-assign led[0] = state == D_DOWN;
+stack st(
+    .push(stack_push),
+    .pop(stack_pop),
+    .in_num(stack_in),
+    .size(stack_size),
+    .top(stack_top),
+    .error(stack_error),
+    .reset(stack_reset),
+    .clk(clk)
+);
 
 display d1(
-    .clk(mclk),
-    .number(disp),
+    .clk(clk),
+    .number(stack_top),
     .seg(seg),
+    .empty(stack_empty),
     .an(an)
 );
 

@@ -1,8 +1,8 @@
 BUILD = ./build 
 PRJ = calc
-VFILES = calc.v div.v
+VFILES = calc.v div.v display.v sync.v stack.v
 
-$(PRJ): $(PRJ).bit
+$(PRJ): $(PRJ)_par.bit
 
 # Synteza (.v -> .ngc)
 $(PRJ).ngc: $(VFILES) $(PRJ).xst $(PRJ).prj
