@@ -3,6 +3,7 @@
 module stack(
     input wire push,
     input wire pop,
+    input wire replace,
     input wire [31:0] in_num,
     output reg [9:0] size,
     output reg [31:0] top,
@@ -66,6 +67,17 @@ always @(posedge clk) begin
                 we <= 1;
                 top <= in_num;
                 size <= size + 1;
+                error <= 0;
+                state <= WRITE;
+            end
+        else if (replace)
+            if (size == 0) error <= 0;
+            else begin
+                // mem[size-1] <= in_num;
+                addr <= size - 1;
+                en <= 1;
+                we <= 1;
+                top <= in_num;
                 error <= 0;
                 state <= WRITE;
             end

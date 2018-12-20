@@ -30,6 +30,7 @@ reg [31:0] stack_in;
 reg [31:0] num_a;
 reg stack_push;
 reg stack_pop;
+reg stack_replace;
 reg stack_reset = 1;
 reg [7:0] init = 8'b00000001;
 wire stack_vld;
@@ -93,6 +94,7 @@ end
 stack st(
     .push(stack_push),
     .pop(stack_pop),
+    .replace(stack_replace),
     .in_num(stack_in),
     .size(stack_size),
     .top(stack_top),
