@@ -46,8 +46,8 @@ always @(posedge clk) begin
         size <= 0;
         top <= 0;
         error <= 0;
-    end 
-    else case (state)
+        state <= IDLE;
+    end else case (state)
         READ: begin
             state <= IDLE;
             top <= odata;

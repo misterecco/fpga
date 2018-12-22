@@ -19,70 +19,87 @@ parameter BOOT = 1;
 parameter IDLE = 2;
 parameter RESET = 3;
 parameter PUSH = 4;
-parameter APPEND = 5;
-parameter POP = 6;
+parameter SWAP = 7;
+parameter OP_END = 9;
 
 wire [31:0] stack_top;
-wire stack_error;
 wire [9:0] stack_size;
+wire stack_error;
 wire stack_empty;
+wire stack_vld;
+wire [15:0] disp;
 reg [31:0] stack_in;
 reg [31:0] num_a;
+reg [31:0] num_b;
 reg stack_push;
 reg stack_pop;
 reg stack_replace;
-reg stack_reset = 1;
+reg stack_reset;
 reg [7:0] init = 8'b00000001;
-wire stack_vld;
 
 integer state = BOOT;
 
 assign stack_empty = stack_size == 0;
 assign led[7] = stack_error;
 assign led[6:0] = stack_size[6:0];
+assign disp = btn_sync[0] ? stack_top[31:16] : stack_top[15:0];
 
 always @(posedge clk) begin
     if (btn_sync[0] && btn_sync[3]) begin
+        state <= IDLE;
         stack_reset <= 1;
-        state <= RESET;
-    end else case (state)
+    end
+    else if (stack_push || stack_pop || stack_replace || stack_reset) begin
+        stack_push <= 0;
+        stack_pop <= 0;
+        stack_replace <= 0;
+        stack_reset <= 0;
+    end
+    else if (stack_vld) case (state)
         BOOT: 
-            if (init[7]) begin 
-                state <= IDLE;
-                stack_reset <= 0;
-            end
+            if (init[7]) state <= IDLE;
             else init <= (init << 1);
-        RESET: begin
-            state <= IDLE;
-            stack_reset <= 0;
-        end
+        OP_END:
+            // protect each op against being executed hundrends of times
+            if (btn_sync[3:1] == 3'b000) state <= IDLE;
         PUSH: begin
-            stack_push <= 0;
-            if (!btn_sync[1] && !btn_sync[2]) state <= IDLE;
-        end
-        POP: begin
-            stack_pop <= 0;
-            if (!btn_sync[3]) state <= IDLE;
-        end
-        APPEND: begin
-            state <= PUSH;
+            state <= OP_END;
+            stack_in <= num_a;
             stack_push <= 1;
-            stack_pop <= 0;
         end
-        IDLE: if (btn_sync[1]) begin
+        SWAP: if (stack_vld) begin
             state <= PUSH;
+            num_a <= stack_top;
+            stack_replace <= 1;
+        end
+        // push
+        IDLE: if (btn_sync[1]) begin
+            state <= OP_END;
             stack_push <= 1;
             stack_in <= {{24{0}},sw_sync};
-        // TODO: handle empty stack
+        // append
         end else if (btn_sync[2]) begin
-            state <= APPEND;
-            stack_in <= {stack_top[23:0],sw};
-            stack_pop <= 1;
+            state <= OP_END;
+            stack_in <= {stack_top[23:0],sw_sync};
+            stack_replace <= 1;
         end else if (btn_sync[3]) begin
             case (sw[2:0])
+                // pop
                 3'b101: begin
+                    state <= OP_END;
                     stack_pop <= 1;
-                    state <= POP;
+                end
+                // dup
+                3'b110: begin
+                    state <= OP_END;
+                    stack_in <= stack_top;
+                    stack_push <= 1;
+                end
+                // swap
+                3'b111: begin
+                    state <= SWAP;
+                    stack_in <= stack_top;
+                    stack_pop <= 1;
                 end
             endcase
         end
@@ -104,9 +121,9 @@ stack st(
     .clk(clk)
 );
 
-display d1(
+display d(
     .clk(clk),
-    .number(stack_top),
+    .number(disp),
     .seg(seg),
     .empty(stack_empty),
     .an(an)
