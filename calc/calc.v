@@ -17,8 +17,9 @@ sync #(.BITS(4)) btnsyn(.in(btn), .out(btn_sync), .clk(clk));
 
 parameter BOOT = 1;
 parameter IDLE = 2;
-parameter RESET = 3;
-parameter PUSH = 4;
+parameter VIDLE = 3;
+parameter RESET = 4;
+parameter PUSH = 5;
 parameter SWAP = 7;
 parameter OP_END = 9;
 parameter ADD = 10;
@@ -43,11 +44,12 @@ reg stack_pop;
 reg stack_replace;
 reg stack_reset;
 reg [7:0] init = 8'b00000001;
+reg op_error;
 
 integer state = BOOT;
 
 assign stack_empty = stack_size == 0;
-assign led[7] = stack_error;
+assign led[7] = stack_error || op_error;
 assign led[6:0] = stack_size[6:0];
 assign disp = btn_sync[0] ? stack_top[31:16] : stack_top[15:0];
 
@@ -73,6 +75,7 @@ always @(posedge clk) begin
     if (btn_sync[0] && btn_sync[3]) begin
         state <= IDLE;
         stack_reset <= 1;
+        op_error <= 0;
     end
     else if (stack_push || stack_pop || stack_replace || stack_reset || div_in_vld) begin
         stack_push <= 0;
@@ -136,13 +139,40 @@ always @(posedge clk) begin
             state <= OP_END;
             stack_push <= 1;
             stack_in <= {{24{0}},sw_sync};
+            op_error <= 0;
         // append
         end else if (btn_sync[2]) begin
             state <= OP_END;
             stack_in <= {stack_top[23:0],sw_sync};
             stack_replace <= 1;
-        end else if (btn_sync[3]) begin
-            case (sw[2:0])
+            op_error <= 0;
+        end else if (btn_sync[3])
+            if (sw_sync[2:0] == 3'b110 || sw_sync[2:0] == 3'b101)
+                if (stack_size > 0) begin
+                    state <= VIDLE;
+                    op_error <= 0;
+                end else begin
+                    state <= OP_END;
+                    op_error <= 1;
+                end
+            else if (sw_sync[2:0] == 3'b011)
+                if (stack_top != 0) begin
+                    state <= VIDLE;
+                    op_error <= 0;
+                end else begin
+                    state <= OP_END;
+                    op_error <= 1;
+                end
+            else
+                if (stack_size > 1) begin
+                    state <= VIDLE;
+                    op_error <= 0;
+                end else begin
+                    state <= OP_END;
+                    op_error <= 1;
+                end
+        VIDLE: if (btn_sync[3]) begin
+            case (sw_sync[2:0])
                 // add 
                 3'b000: begin
                     state <= ADD;
