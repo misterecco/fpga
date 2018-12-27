@@ -1,23 +1,30 @@
 `default_nettype none
 
-module dzielacz(A_IN, A_OUT, Q, B);
+module dzielacz(A_IN, A_OUT, Q, B, IDX);
 
-parameter IDX = 4;
+parameter BITS = 4;
 
-input wire [IDX-1:0] A_IN;
-output reg [IDX-1:0] A_OUT:
+input wire [BITS-1:0] A_IN;
+output reg [BITS-1:0] A_OUT;
 output reg Q;
-input wire [IDX-1:0] B;
+input wire [BITS-1:0] B;
+input wire [4:0] IDX;
 
-always @(A_IN, B) begin
-    if (A_IN >= B) begin
+wire [2*BITS-1:0] B_SHIFTED;
+
+assign B_SHIFTED = B << IDX;
+
+always @(A_IN, B_SHIFTED, IDX) begin
+    if (A_IN >= B_SHIFTED) begin
         Q = 1;
-        A_OUT = A_IN - B;
+        A_OUT = A_IN - B_SHIFTED;
     end
     else begin
         Q = 0;
         A_OUT = A_IN;
     end
+end
+
 endmodule
 
 
@@ -33,7 +40,7 @@ input wire input_vld; // 1 jeśli ktoś przesyła nam nowe liczby do dzielenia
 output wire output_vld; // 1 jeśli skończyliśmy dzielenie
 input wire clk;
 
-reg [$clog2(BITS)-1:0] bitidx = 0;
+reg [4:0] bitidx = 0;
 reg active = 0;
 reg [BITS-1:0] tmp_a;
 reg [BITS-1:0] tmp_q;
@@ -44,7 +51,14 @@ assign output_vld = !active;
 wire q1;
 wire [BITS-1:0] out;
 
-div1 dzielacz(.A_IN(tmp_a[i]), .A_OUT(out), .Q(q1), .B(B), IDX(bitidx));
+dzielacz #(
+    .BITS(32)
+) dielacz_impl(
+    .A_IN(tmp_a), 
+    .A_OUT(out), 
+    .Q(q1), .B(B), 
+    .IDX(bitidx)
+);
 
 always @(posedge clk) begin
     if (!active) begin
@@ -63,4 +77,4 @@ always @(posedge clk) begin
     end
 end
 
-endmodule;
+endmodule
