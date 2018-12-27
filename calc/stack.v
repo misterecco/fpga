@@ -41,6 +41,8 @@ RAMB16_S36 #(
     .WE(we) // Write Enable Input
 );
 
+reg read_wait = 0;
+
 always @(posedge clk) begin
     if (reset) begin
         size <= 0;
@@ -48,7 +50,8 @@ always @(posedge clk) begin
         error <= 0;
         state <= IDLE;
     end else case (state)
-        READ: begin
+        READ: if (!read_wait) read_wait <= 1;
+        else begin
             state <= IDLE;
             top <= odata;
             en <= 0;
@@ -71,7 +74,7 @@ always @(posedge clk) begin
                 state <= WRITE;
             end
         else if (replace)
-            if (size == 0) error <= 0;
+            if (size == 0) error <= 1;
             else begin
                 // mem[size-1] <= in_num;
                 addr <= size - 1;
@@ -96,6 +99,7 @@ always @(posedge clk) begin
                 size <= size - 1;
                 error <= 0;
                 state <= READ;
+                read_wait <= 0;
             end
     endcase
 end

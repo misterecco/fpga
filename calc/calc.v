@@ -41,7 +41,8 @@ integer state = BOOT;
 
 assign stack_empty = stack_size == 0;
 assign led[7] = stack_error;
-assign led[6:0] = stack_size[6:0];
+assign led[5:0] = stack_size[5:0];
+assign led[6] = stack_vld;
 assign disp = btn_sync[0] ? stack_top[31:16] : stack_top[15:0];
 
 always @(posedge clk) begin
@@ -67,7 +68,7 @@ always @(posedge clk) begin
             stack_in <= num_a;
             stack_push <= 1;
         end
-        SWAP: if (stack_vld) begin
+        SWAP: begin
             state <= PUSH;
             num_a <= stack_top;
             stack_replace <= 1;
