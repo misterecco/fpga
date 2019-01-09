@@ -155,8 +155,8 @@ always @(posedge clk) begin
                     state <= OP_END;
                     op_error <= 1;
                 end
-            else if (sw_sync[2:0] == 3'b011)
-                if (stack_top != 0) begin
+            else if (sw_sync[2:0] == 3'b011 || sw_sync[2:0] == 3'b100)
+                if (stack_top != 0 && stack_size > 1) begin
                     state <= VIDLE;
                     op_error <= 0;
                 end else begin
