@@ -24,8 +24,8 @@ flash: $(PRJ)_par.bit
 	djtgcfg -d Basys2 prog -i 0 -f $(PRJ)_par.bit
 
 clean:
-	rm -rf $(PRJ).{ngc,lso,srp} xst build _xmsgs
+	rm -rf $(PRJ).{ngc,srp} xst build _xmsgs
 	rm -rf $(PRJ).{ngd,bld} netlist.lst xlnx_auto_0_xdb
 	rm -rf $(PRJ).{ncd,pcf,map,mrp,ngm}
 	rm -rf $(PRJ)_par*
-	rm *.xrpt *.xml *.html *.log
+	rm *.xrpt *.xml *.html *.log *.lso
