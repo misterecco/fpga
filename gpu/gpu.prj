@@ -1,2 +1,3 @@
 verilog work "top.v"
-verilog work "gpu.v"
+verilog work "vga.v"
+verilog work "display.v"

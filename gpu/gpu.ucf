@@ -25,7 +25,9 @@ NET "btn<1>" LOC = "C11";  # Bank = 3, Signal name = BTN1
 NET "btn<0>" LOC = "G12";  # Bank = 3, Signal name = BTN0
 
 # Clock
-NET "clk" LOC = "B8"; # Bank = 0, Signal name = CLK
+NET "mclk" LOC = "B8"; # Bank = 2, Signal name = UCLK
+NET "mclk" CLOCK_DEDICATED_ROUTE = FALSE;
+NET "mclk" PERIOD = 10ns INPUT_JITTER 100ps;
 
 # Pin assignment for 7-segment display
 NET "seg<0>" LOC = "L14"; # Bank = 1, Signal name = CA
@@ -41,3 +43,16 @@ NET "an<3>" LOC = "K14"; # Bank = 1, Signal name = AN3
 NET "an<2>" LOC = "M13"; # Bank = 1, Signal name = AN2
 NET "an<1>" LOC = "J12"; # Bank = 1, Signal name = AN1
 NET "an<0>" LOC = "F12"; # Bank = 1, Signal name = AN0
+
+# Pin assignment for VGA
+NET "HSYNC"   LOC = "J14"  | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = HSYNC
+NET "VSYNC"   LOC = "K13"  | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = VSYNC
+
+NET "OutRed<2>"  LOC = "F13"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = RED2
+NET "OutRed<1>"  LOC = "D13"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = RED1
+NET "OutRed<0>"  LOC = "C14"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = RED0
+NET "OutGreen<2>"  LOC = "G14"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = GRN2
+NET "OutGreen<1>"  LOC = "G13"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = GRN1 
+NET "OutGreen<0>"  LOC = "F14"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = GRN0 
+NET "OutBlue<2>"  LOC = "J13"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = BLU2
+NET "OutBlue<1>"  LOC = "H13"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = BLU1 
