@@ -1,5 +1,5 @@
 BUILD = ./build 
-PRJ = calc
+PRJ = gpu
 VFILES := $(wildcard *.v)
 
 $(PRJ): $(PRJ)_par.bit
