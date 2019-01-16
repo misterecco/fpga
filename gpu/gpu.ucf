@@ -56,3 +56,17 @@ NET "OutGreen<1>"  LOC = "G13"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name
 NET "OutGreen<0>"  LOC = "F14"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = GRN0 
 NET "OutBlue<2>"  LOC = "J13"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = BLU2
 NET "OutBlue<1>"  LOC = "H13"   | DRIVE = 2  | PULLUP ; # Bank = 1, Signal name = BLU1 
+
+# Pis assignment for EPP controller
+# NET "EppAstb" LOC = "F2"; # Bank = 3
+# NET "EppDstb" LOC = "F1"; # Bank = 3
+# NET "EppWR" LOC = "C2"; # Bank = 3
+# NET "EppWait" LOC = "D2"; # Bank = 3
+# NET "EppDB<0>" LOC = "N2"; # Bank = 2
+# NET "EppDB<1>" LOC = "M2"; # Bank = 2
+# NET "EppDB<2>" LOC = "M1"; # Bank = 3
+# NET "EppDB<3>" LOC = "L1"; # Bank = 3
+# NET "EppDB<4>" LOC = "L2"; # Bank = 3
+# NET "EppDB<5>" LOC = "H2"; # Bank = 3
+# NET "EppDB<6>" LOC = "H1"; # Bank = 3
+# NET "EppDB<7>" LOC = "H3"; # Bank = 3

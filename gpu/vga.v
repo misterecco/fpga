@@ -16,10 +16,10 @@ localparam HS_START = 16;              // horizontal sync start
 localparam HS_END = 16 + 96;         // horizontal sync end
 localparam HA_START = 16 + 96 + 48;    // horizontal active pixel start
 localparam LINE   = 800;             // complete line (pixels)
-localparam VA_END = 480;             // vertical active pixel end
-localparam VS_START = 480 + 11;        // vertical sync start
-localparam VS_END = 480 + 11 + 2;    // vertical sync end
-localparam SCREEN = 524;             // complete screen (lines)
+localparam VA_END = 400;             // vertical active pixel end
+localparam VS_START = 400 + 12;        // vertical sync start
+localparam VS_END = 400 + 12 + 2;    // vertical sync end
+localparam SCREEN = 449;             // complete screen (lines)
 
 reg [9:0] h_count;  // line position
 reg [9:0] v_count;  // screen position
@@ -27,11 +27,12 @@ wire visible;
 wire [8:0] o_x;
 wire [7:0] o_y;
 
-reg [319:0] buffer [239:0];
+reg [319:0] buffer [199:0];
 
-// generate sync signals (active low for 640x480)
+// generate sync signals (active low for 640x400)
 assign HS = ~((h_count >= HS_START) & (h_count < HS_END));
-assign VS = ~((v_count >= VS_START) & (v_count < VS_END));
+// generate sync signals (active high for 640x400)
+assign VS = ((v_count >= VS_START) & (v_count < VS_END));
 
 assign visible = h_count >= HA_START && v_count <= VA_END; 
 
@@ -41,13 +42,15 @@ assign o_y = (v_count >= VA_END) ? (VA_END - 1) >> 1 : (v_count) >> 1;
 
 always @ (posedge clk)
 begin
-    buffer[0] <= {320{1'b1}};
-    buffer[119] <= {320{1'b1}};
-    buffer[239] <= {320{1'b1}};
+    buffer[0] <= {{160{1'b1}},{160{1'b0}}};
+    buffer[99] <= {320{1'b1}};
+    buffer[199] <= {320{1'b1}};
+
     if (rst) begin
         h_count <= 0;
         v_count <= 0;
     end
+
     begin
         if (!visible) 
             {R,G,B} <= 0;

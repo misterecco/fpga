@@ -30,9 +30,9 @@ vga vga_inst (
 );
 
 DCM_SP #(
-    .CLKFX_DIVIDE(10),
+    .CLKFX_DIVIDE(4),
     .CLKFX_MULTIPLY(2),
-    .CLKIN_PERIOD(10),
+    .CLKIN_PERIOD(20),
     .CLK_FEEDBACK("NONE"),
     .STARTUP_WAIT("TRUE")
 ) dcm_vclk (
