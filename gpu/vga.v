@@ -3,10 +3,12 @@
 module vga(
     output wire HS,
     output wire VS,
-	output reg [2:0] R,
-	output reg [2:0] G,
-	output reg [2:1] B,
-    input wire [7:0] sw,
+    output reg [2:0] R,
+    output reg [2:0] G,
+    output reg [2:1] B,
+    output reg [8:0] x_a,
+    output reg [7:0] y_a,
+    input wire in_a,
     input wire clk,
     input wire rst
 );
@@ -24,10 +26,8 @@ localparam SCREEN = 449;             // complete screen (lines)
 reg [9:0] h_count;  // line position
 reg [9:0] v_count;  // screen position
 wire visible;
-wire [8:0] o_x;
-wire [7:0] o_y;
-
-reg [319:0] buffer [199:0];
+wire [9:0] o_x;
+wire [9:0] o_y;
 
 // generate sync signals (active low for 640x400)
 assign HS = ~((h_count >= HS_START) & (h_count < HS_END));
@@ -37,27 +37,28 @@ assign VS = ((v_count >= VS_START) & (v_count < VS_END));
 assign visible = h_count >= HA_START && v_count <= VA_END; 
 
 // keep x and y bound within the active pixels
-assign o_x = (h_count < HA_START) ? 0 : (h_count - HA_START) >> 1;
-assign o_y = (v_count >= VA_END) ? (VA_END - 1) >> 1 : (v_count) >> 1;
+assign o_x = (h_count < HA_START) ? 0 : (h_count - HA_START);
+assign o_y = (v_count >= VA_END) ? (VA_END - 1) : (v_count);
 
 always @ (posedge clk)
 begin
-    buffer[0] <= {{160{1'b1}},{160{1'b0}}};
-    buffer[99] <= {320{1'b1}};
-    buffer[199] <= {320{1'b1}};
-
     if (rst) begin
         h_count <= 0;
         v_count <= 0;
     end
 
+    if (!o_x[0]) begin // Ask for the value of next pixel
+        x_a <= visible ? (o_x >> 1) + 1 : 0;
+        y_a <= o_y >> 1;
+    end
+
     begin
         if (!visible) 
             {R,G,B} <= 0;
-        else if (buffer[o_y][o_x])
-            {R,G,B} <= 0'b11111111;
+        else if (in_a)
+            {R,G,B} <= 8'b11111111;
         else 
-            {R,G,B} <= 0'b00100101;
+            {R,G,B} <= 8'b00100101;
         
         if (h_count == LINE) begin // end of line
             h_count <= 0;

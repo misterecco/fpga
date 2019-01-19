@@ -1,3 +1,4 @@
 verilog work "top.v"
 verilog work "vga.v"
 verilog work "display.v"
+verilog work "ram.v"
