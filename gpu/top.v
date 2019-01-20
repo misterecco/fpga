@@ -11,8 +11,25 @@ module top(
     output wire [7:0] led,
     input wire [7:0] sw,
     input wire [3:0] btn,
+    inout wire [7:0] EppDB,
+    input wire EppAstb,
+    input wire EppDstb,
+    input wire EppWR,
+    output wire EppWait,
     input wire mclk
 );
+
+epp epp_inst (
+    .Db(EppDB),
+    .Astb(EppAstb),
+    .Dstb(EppDstb),
+    .Wr(EppWR),
+    .Wait(EppWait),
+    .clk(mclk),
+    .led(led)
+);
+
+// assign led = sw;
 
 wire vclk;
 
@@ -31,17 +48,21 @@ wire [15:0] addr_b;
 
 integer count = 1;
 integer done = 0;
+integer c = 1;
 
 always @(posedge mclk)
 begin
-    if (count < 1000)
+    if (c < 100000000)
+        c <= c + 1;
+    else if (count < 2)
         count <= count + 1;
     else if (!done) begin
-        count <= 0;
+        count <= 1;
         if (x_b == 319 && y_b == 199) begin
             x_b <= 0;
             y_b <= 0;
             in_b <= !in_b;
+            c <= 1;
         end else if (x_b == 319) begin
             x_b <= 0;
             y_b <= y_b + 1;
@@ -53,8 +74,6 @@ end
 assign read_b = 0;
 
 ram ram_inst (
-    .led(led),
-    .oaddr_b(addr_b),
     .x_a(x_a),
     .y_a(y_a),
     .x_b(x_b),

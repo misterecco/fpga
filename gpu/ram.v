@@ -1,8 +1,6 @@
 `default_nettype none
 
 module ram(
-    output wire [7:0] led,
-    output wire [15:0] oaddr_b,
     input wire [8:0] x_a,
     input wire [7:0] y_a,
     input wire [8:0] x_b,
@@ -44,9 +42,6 @@ assign xy_b = x_b + y_b * 320;
 assign use_a = xy_a[15:14];
 assign addr_a = xy_a[13:0];
 assign rdy_b = state_b == IDLE;
-assign oaddr_b = addr_b;
-assign led[3:0] = use_b;
-assign led[7:4] = ena_b;
 
 always @(posedge clk_b) begin
     if (reset) begin
@@ -70,12 +65,13 @@ always @(posedge clk_b) begin
                 use_b <= xy_b[15:14];
                 addr_b <= xy_b[13:0];
             end
-        READ_WAIT:
+        READ_WAIT: begin
             state_b <= READ;
+            ena_b <= 0;
+        end
         READ: begin
             state_b <= IDLE;
             out_b <= odata_b[use_b];
-            ena_b <= 0;
         end
         WRITE: begin
             state_b <= IDLE;
@@ -94,8 +90,6 @@ always @(posedge clk_a) begin
     use_a_1 <= use_a;
     use_a_2 <= use_a_1;
 end
-
-// TODO: rewrite as generate-for
 
 genvar i;
 generate
