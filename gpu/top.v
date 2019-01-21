@@ -9,8 +9,7 @@ module top(
     output wire [6:0] seg,
     output wire [3:0] an,
     output wire [7:0] led,
-    input wire [7:0] sw,
-    input wire [3:0] btn,
+    input wire [0:0] btn,
     inout wire [7:0] EppDB,
     input wire EppAstb,
     input wire EppDstb,
@@ -19,17 +18,38 @@ module top(
     input wire mclk
 );
 
+wire [7:0] ip_addr;
+wire [7:0] ip_di;
+wire [7:0] ip_do;
+wire ip_rd;
+wire ip_wr;
+
+wire [15:0] number;
+
 epp epp_inst (
-    .Db(EppDB),
-    .Astb(EppAstb),
-    .Dstb(EppDstb),
-    .Wr(EppWR),
+    .Db_unsync(EppDB),
+    .Astb_unsync(EppAstb),
+    .Dstb_unsync(EppDstb),
+    .Wr_unsync(EppWR),
     .Wait(EppWait),
+    .ip_addr(ip_addr),
+    .ip_do(ip_do),
+    .ip_di(ip_di),
+    .ip_wr(ip_wr),
+    .ip_rd(ip_rd),
     .clk(mclk),
+    .number(number),
     .led(led)
 );
 
-// assign led = sw;
+ip ip_inst (
+    .addr(ip_addr),
+    .data_in(ip_do),
+    .read(ip_rd),
+    .write(ip_wr),
+    .data_out(ip_di),
+    .clk(mclk)
+);
 
 wire vclk;
 
@@ -84,7 +104,7 @@ ram ram_inst (
     .out_a(out_a),
     .out_b(out_b),
     .rdy_b(rdy_b),
-    .reset(0),
+    .reset(btn[0]),
     .clk_a(vclk),
     .clk_b(mclk)
 );
@@ -99,7 +119,7 @@ vga vga_inst (
     .y_a(y_a),
     .in_a(out_a),
     .clk(vclk),
-    .rst(0)
+    .rst(btn[0])
 );
 
 DCM_SP #(
@@ -114,7 +134,7 @@ DCM_SP #(
 );
 
 display display_inst (
-    .number(addr_b),
+    .number(number),
     .seg(seg),
     .an(an),
     .empty(0),
