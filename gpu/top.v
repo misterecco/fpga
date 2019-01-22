@@ -26,8 +26,6 @@ wire ip_rd;
 wire ip_wr;
 wire ip_do_rdy;
 
-// assign led[7:0] = 0;
-
 wire [15:0] number;
 
 epp epp_inst (
@@ -76,35 +74,6 @@ ip ip_inst (
 );
 
 wire vclk;
-
-// wire [15:0] addr_b;
-
-// integer count = 1;
-// integer done = 0;
-// integer c = 1;
-
-// always @(posedge mclk)
-// begin
-//     if (c < 100000000)
-//         c <= c + 1;
-//     else if (count < 2)
-//         count <= count + 1;
-//     else if (!done) begin
-//         count <= 1;
-//         if (x_b == 319 && y_b == 199) begin
-//             x_b <= 0;
-//             y_b <= 0;
-//             in_b <= !in_b;
-//             c <= 1;
-//         end else if (x_b == 319) begin
-//             x_b <= 0;
-//             y_b <= y_b + 1;
-//         end else
-//             x_b <= x_b + 1;
-//     end
-// end
-
-// assign read_b = 0;
 
 ram ram_inst (
     .x_a(x_a),

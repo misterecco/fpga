@@ -23,6 +23,8 @@ parameter BYTE_READ = 1;
 parameter BYTE_READ_WAIT = 2;
 parameter BYTE_WRITE = 3;
 parameter BYTE_WRITE_WAIT = 4;
+parameter FILL = 6;
+parameter FILL_WAIT = 7;
 
 integer state = BOOT;
 
@@ -30,41 +32,86 @@ reg [7:0] registers [11:0];
 reg [319:0] line_buffer;
 reg [7:0] init = 8'b00000001;
 
+wire [8:0] x_1;
+wire [7:0] y_1;
+wire [8:0] x_2;
+wire [7:0] y_2;
+wire [8:0] width;
+wire [7:0] height;
+reg [8:0] max_x_b;
+reg [7:0] max_y_b;
+
+assign x_1 = {registers[4'h1][0],registers[4'h0]};
+assign y_1 = registers[4'h2];
+assign x_2 = {registers[4'h5][0],registers[4'h4]};
+assign y_2 = registers[4'h6];
+assign width = {registers[4'h9][0],registers[4'h8]};
+assign height = registers[4'ha];
+
 integer current_bit;
 
 always @(posedge clk)
 begin
+    if (read && addr == 8'h0f) // status
+        data_out <= state != IDLE;
     case (state)
         BOOT:
             if (init[7]) state <= IDLE;
             else init <= (init << 1);
         IDLE:
             if (read) begin
-                if (addr <= 8'h0b) begin
+                if (addr <= 8'h0b) begin // registers read
                     data_out <= registers[addr];
                     do_rdy <= 1;
                 end 
-                else if (addr == 8'h0e) begin
+                else if (addr == 8'h0e) begin // direct buffer read
                     state <= BYTE_READ;
                     current_bit <= 0;
-                    x_b <= {registers[4'h1][0],registers[4'h0][7:3],3'b000};
-                    y_b <= registers[4'h2];
+                    x_b <= {x_1[8:3],3'b000};
+                    y_b <= y_1;
                     do_rdy <= 0;
                 end
             end
             else if (write)
-                if (addr <= 8'h0b) begin
+                if (addr <= 8'h0b) begin // registers write
                     registers[addr] <= data_in;
                     do_rdy <= 1;
                 end 
-                else if (addr == 8'h0e) begin
+                else if (addr == 8'h0d) begin // fill
+                    state <= FILL;
+                    x_b <= x_1;
+                    y_b <= y_1; 
+                    max_x_b <= x_1 + width - 1 < 319 ? x_1 + width - 1 : 319;
+                    max_y_b <= y_1 + height - 1 < 199 ? y_1 + height - 1 : 199;
+                    in_b <= data_in[0];
+                    do_rdy <= 1;
+                end
+                else if (addr == 8'h0e) begin // direct buffer write
                     state <= BYTE_WRITE;
                     current_bit <= 0;
-                    x_b <= {registers[4'h1][0],registers[4'h0][7:3],3'b000};
-                    y_b <= registers[4'h2];
+                    x_b <= {x_1[8:3],3'b000};
+                    y_b <= y_1;
                     in_b <= data_in[0];
                     do_rdy <= 0;
                 end
+        FILL:
+            if (y_b > max_y_b)
+                state <= IDLE;
+            else begin
+                state <= FILL_WAIT;
+                write_b <= 1;
+            end
+        FILL_WAIT: begin
+            write_b <= 0;
+            if (!write_b && rdy_b) begin
+                state <= FILL;
+                if (x_b == max_x_b) begin
+                    y_b <= y_b + 1;
+                    x_b <= x_1;
+                end else
+                    x_b <= x_b + 1;
+            end
+        end
         BYTE_READ:
             if (current_bit == 8) begin
                 state <= IDLE;
