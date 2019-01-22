@@ -8,6 +8,7 @@ module epp(
     output reg Wait, // strobe response
     output reg [7:0] ip_addr,
     output reg [7:0] ip_do,
+    input wire ip_do_rdy,
     input wire [7:0] ip_di,
     output reg ip_wr,
     output reg ip_rd,
@@ -19,6 +20,11 @@ module epp(
 wire Astb;
 wire Dstb;
 wire Wr;
+
+// assign led[7:3] = 0;
+// assign led[0] = Astb;
+// assign led[1] = Dstb;
+// assign led[2] = Wr;
 
 sync #(
     .BITS(3),
@@ -48,14 +54,13 @@ parameter IDLE = 0;
 parameter ADDR_END = 1;
 parameter DATA_END = 2;
 parameter DATA_READ = 3;
-parameter DATA_READ_WAIT = 4;
 parameter DATA_WRITE = 5;
 
 integer state = IDLE;
 
 assign number[15:8] = ip_addr;
 assign number[7:0] = ip_do;
-assign led = ip_di;
+assign led = db_out;
 
 always @(posedge clk)
 begin
@@ -71,7 +76,7 @@ begin
                 ip_do <= db_in;
                 ip_wr <= 1;
             end else if (!Dstb && Wr) begin // data read
-                state <= DATA_READ_WAIT;
+                state <= DATA_READ;
                 ip_rd <= 1;
             end
         ADDR_END:
@@ -89,18 +94,17 @@ begin
                 state <= IDLE;
             end
         DATA_WRITE: begin
-            state <= DATA_END;
-            Wait <= 1;
+            if (!ip_wr && ip_do_rdy) 
+                state <= DATA_END;
             ip_wr <= 0;
         end
-        DATA_READ: begin // TODO: wait until image processor is ready
-            state <= DATA_END;
-            Wait <= 1;
-            db_out <= ip_di;
+        DATA_READ: begin
+            if (!ip_rd && ip_do_rdy) begin 
+                state <= DATA_END;
+                db_out <= ip_di;
+            end
             ip_rd <= 0;
         end
-        DATA_READ_WAIT:
-            state <= DATA_READ;
     endcase
 end
 

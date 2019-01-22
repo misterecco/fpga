@@ -15,6 +15,7 @@ module top(
     input wire EppDstb,
     input wire EppWR,
     output wire EppWait,
+    input wire [7:0] sw,
     input wire mclk
 );
 
@@ -23,6 +24,9 @@ wire [7:0] ip_di;
 wire [7:0] ip_do;
 wire ip_rd;
 wire ip_wr;
+wire ip_do_rdy;
+
+// assign led[7:0] = 0;
 
 wire [15:0] number;
 
@@ -34,6 +38,7 @@ epp epp_inst (
     .Wait(EppWait),
     .ip_addr(ip_addr),
     .ip_do(ip_do),
+    .ip_do_rdy(ip_do_rdy),
     .ip_di(ip_di),
     .ip_wr(ip_wr),
     .ip_rd(ip_rd),
@@ -42,56 +47,64 @@ epp epp_inst (
     .led(led)
 );
 
+wire [8:0] x_a;
+wire [7:0] y_a;
+wire [8:0] x_b;
+wire [7:0] y_b;
+wire read_b;
+wire write_b;
+wire in_b;
+wire out_a;
+wire out_b;
+wire rdy_b;
+
 ip ip_inst (
     .addr(ip_addr),
     .data_in(ip_do),
     .read(ip_rd),
     .write(ip_wr),
     .data_out(ip_di),
+    .do_rdy(ip_do_rdy),
+    .x_b(x_b),
+    .y_b(y_b),
+    .read_b(read_b),
+    .write_b(write_b),
+    .in_b(in_b),
+    .out_b(out_b),
+    .rdy_b(rdy_b),
     .clk(mclk)
 );
 
 wire vclk;
 
-wire [8:0] x_a;
-wire [7:0] y_a;
-reg [8:0] x_b = 0;
-reg [7:0] y_b = 0;
-wire read_b;
-reg write_b = 1;
-reg in_b = 1;
-wire out_a;
-wire out_b;
-wire rdy_b;
+// wire [15:0] addr_b;
 
-wire [15:0] addr_b;
+// integer count = 1;
+// integer done = 0;
+// integer c = 1;
 
-integer count = 1;
-integer done = 0;
-integer c = 1;
+// always @(posedge mclk)
+// begin
+//     if (c < 100000000)
+//         c <= c + 1;
+//     else if (count < 2)
+//         count <= count + 1;
+//     else if (!done) begin
+//         count <= 1;
+//         if (x_b == 319 && y_b == 199) begin
+//             x_b <= 0;
+//             y_b <= 0;
+//             in_b <= !in_b;
+//             c <= 1;
+//         end else if (x_b == 319) begin
+//             x_b <= 0;
+//             y_b <= y_b + 1;
+//         end else
+//             x_b <= x_b + 1;
+//     end
+// end
 
-always @(posedge mclk)
-begin
-    if (c < 100000000)
-        c <= c + 1;
-    else if (count < 2)
-        count <= count + 1;
-    else if (!done) begin
-        count <= 1;
-        if (x_b == 319 && y_b == 199) begin
-            x_b <= 0;
-            y_b <= 0;
-            in_b <= !in_b;
-            c <= 1;
-        end else if (x_b == 319) begin
-            x_b <= 0;
-            y_b <= y_b + 1;
-        end else
-            x_b <= x_b + 1;
-    end
-end
-
-assign read_b = 0;
+// assign read_b = 0;
 
 ram ram_inst (
     .x_a(x_a),
