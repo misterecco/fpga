@@ -14,22 +14,26 @@ module ip(
     output reg in_b,
     input wire out_b,
     input wire rdy_b,
+    output reg [7:0] led,
     input wire clk
 );
 
-parameter BOOT = 5;
 parameter IDLE = 0;
 parameter BYTE_READ = 1;
 parameter BYTE_READ_WAIT = 2;
 parameter BYTE_WRITE = 3;
 parameter BYTE_WRITE_WAIT = 4;
+parameter BOOT = 5;
 parameter FILL = 6;
 parameter FILL_WAIT = 7;
+parameter BLIT_PREPARE = 8;
+parameter BLIT = 9;
+parameter BLIT_READ = 10;
+parameter BLIT_WRITE = 11;
 
 integer state = BOOT;
 
 reg [7:0] registers [11:0];
-reg [319:0] line_buffer;
 reg [7:0] init = 8'b00000001;
 
 wire [8:0] x_1;
@@ -40,6 +44,18 @@ wire [8:0] width;
 wire [7:0] height;
 reg [8:0] max_x_b;
 reg [7:0] max_y_b;
+reg [8:0] x_s;
+reg [7:0] y_s;
+reg [8:0] x_t;
+reg [7:0] y_t;
+reg [8:0] x_s_next;
+reg [7:0] y_s_next;
+reg [8:0] x_t_next;
+reg [7:0] y_t_next;
+
+integer inc_x;
+integer inc_y;
+integer current_bit;
 
 assign x_1 = {registers[4'h1][0],registers[4'h0]};
 assign y_1 = registers[4'h2];
@@ -47,8 +63,6 @@ assign x_2 = {registers[4'h5][0],registers[4'h4]};
 assign y_2 = registers[4'h6];
 assign width = {registers[4'h9][0],registers[4'h8]};
 assign height = registers[4'ha];
-
-integer current_bit;
 
 always @(posedge clk)
 begin
@@ -72,12 +86,40 @@ begin
                     do_rdy <= 0;
                 end
             end
-            else if (write)
+            else if (write) begin
                 if (addr <= 8'h0b) begin // registers write
                     registers[addr] <= data_in;
                     do_rdy <= 1;
                 end 
+                else if (addr == 8'h0c) begin // blit
+                    led[0] <= 1;
+                    state <= BLIT_PREPARE;
+                    do_rdy <= 1;
+                    if (x_1 >= x_2) begin
+                        x_s <= x_1;
+                        x_t <= x_2;
+                        inc_x <= 1;
+                        max_x_b <= x_1 + width - 1 < 319 ? x_1 + width - 1 : 319;
+                    end else begin
+                        x_s <= x_2 + width - 1 <= 319 ? x_1 + width - 1 : x_1 + 319 - x_2;
+                        x_t <= x_2 + width - 1 <= 319 ? x_2 + width - 1 : 319;
+                        inc_x <= -1;
+                        max_x_b <= x_1;
+                    end 
+                    if (y_1 >= y_2) begin
+                        y_s <= y_1;
+                        y_t <= y_2;
+                        inc_y <= 1;
+                        max_y_b <= y_1 + height - 1 < 199 ? y_1 + height - 1 : 199;
+                    end else begin
+                        y_s <= y_2 + height - 1 <= 199 ? y_1 + height - 1 : y_1 + 199 - y_2;
+                        y_t <= y_2 + height - 1 <= 199 ? y_2 + height - 1 : 199;
+                        inc_y <= -1;
+                        max_y_b <= y_1;
+                    end
+                end
                 else if (addr == 8'h0d) begin // fill
+                    led[1] <= 1;
                     state <= FILL;
                     x_b <= x_1;
                     y_b <= y_1; 
@@ -87,6 +129,7 @@ begin
                     do_rdy <= 1;
                 end
                 else if (addr == 8'h0e) begin // direct buffer write
+                    led[2] <= 1;
                     state <= BYTE_WRITE;
                     current_bit <= 0;
                     x_b <= {x_1[8:3],3'b000};
@@ -94,6 +137,48 @@ begin
                     in_b <= data_in[0];
                     do_rdy <= 0;
                 end
+            end
+        BLIT_PREPARE: begin 
+            state <= BLIT;
+            x_s_next <= x_s;
+            y_s_next <= y_s;
+            x_t_next <= x_t;
+            y_t_next <= y_t;
+        end
+        BLIT: 
+            if (y_s_next > max_y_b)
+                state <= IDLE;
+            else begin
+                state <= BLIT_READ;
+                x_b <= x_s_next;
+                y_b <= y_s_next;
+                read_b <= 1;
+            end
+        BLIT_READ: begin
+            read_b <= 0;
+            if (!read_b && rdy_b) begin
+                state <= BLIT_WRITE;
+                x_b <= x_t_next;
+                y_b <= y_t_next;
+                in_b <= out_b;
+                write_b <= 1;
+            end
+        end
+        BLIT_WRITE: begin
+            write_b <= 0;
+            if (!write_b && rdy_b) begin
+                state <= BLIT;
+                if (x_s_next == max_x_b) begin
+                    x_s_next <= x_s;
+                    y_s_next <= y_s_next + inc_y;
+                    x_t_next <= x_t;
+                    y_t_next <= y_t_next + inc_y;
+                end else begin
+                    x_s_next <= x_s_next + inc_x;
+                    x_t_next <= x_t_next + inc_x;
+                end
+            end
+        end
         FILL:
             if (y_b > max_y_b)
                 state <= IDLE;

@@ -13,18 +13,13 @@ module epp(
     output reg ip_wr,
     output reg ip_rd,
     input wire clk,
-    output wire [15:0] number,
-    output wire [7:0] led
+    output wire [15:0] number
+    // output wire [7:0] led
 );
 
 wire Astb;
 wire Dstb;
 wire Wr;
-
-// assign led[7:3] = 0;
-// assign led[0] = Astb;
-// assign led[1] = Dstb;
-// assign led[2] = Wr;
 
 sync #(
     .BITS(3),
@@ -60,7 +55,7 @@ integer state = IDLE;
 
 assign number[15:8] = ip_addr;
 assign number[7:0] = ip_do;
-assign led = db_out;
+// assign led = db_out;
 
 always @(posedge clk)
 begin
