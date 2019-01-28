@@ -12,8 +12,8 @@ module epp(
     input wire [7:0] ip_di,
     output reg ip_wr,
     output reg ip_rd,
-    input wire clk,
-    output wire [15:0] number
+    input wire clk
+    // output wire [15:0] number
     // output wire [7:0] led
 );
 
@@ -49,12 +49,12 @@ parameter IDLE = 0;
 parameter ADDR_END = 1;
 parameter DATA_END = 2;
 parameter DATA_READ = 3;
-parameter DATA_WRITE = 5;
+parameter DATA_WRITE = 4;
 
 integer state = IDLE;
 
-assign number[15:8] = ip_addr;
-assign number[7:0] = ip_do;
+// assign number[15:8] = ip_addr;
+// assign number[7:0] = ip_do;
 // assign led = db_out;
 
 always @(posedge clk)

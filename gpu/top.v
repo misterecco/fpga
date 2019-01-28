@@ -40,8 +40,7 @@ epp epp_inst (
     .ip_di(ip_di),
     .ip_wr(ip_wr),
     .ip_rd(ip_rd),
-    .clk(mclk),
-    .number(number)
+    .clk(mclk)
 );
 
 wire [8:0] x_a;
@@ -70,6 +69,7 @@ ip ip_inst (
     .out_b(out_b),
     .rdy_b(rdy_b),
     .led(led),
+    .number(number),
     .clk(mclk)
 );
 
