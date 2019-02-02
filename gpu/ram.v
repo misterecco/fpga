@@ -23,13 +23,12 @@ parameter WRITE = 4'b1000;
 
 wire [3:0] odata_a;
 wire [3:0] odata_b;
-wire [13:0] addr_a;
 reg [13:0] addr_b;
-wire [15:0] xy_a;
-wire [15:0] xy_b;
-wire [1:0] use_a;
+wire [15:0] xy_a = x_a + y_a * 320;
+wire [15:0] xy_b = x_b + y_b * 320;
+wire [1:0] use_a = xy_a[15:14];
+wire [13:0] addr_a = xy_a[13:0];
 reg [1:0] use_a_1;
-reg [1:0] use_a_2;
 reg [1:0] use_b;
 reg [3:0] ena_b;
 reg [3:0] we_b;
@@ -37,10 +36,6 @@ reg in_b_1;
 
 reg [3:0] state_b = IDLE;
 
-assign xy_a = x_a + y_a * 320;
-assign xy_b = x_b + y_b * 320;
-assign use_a = xy_a[15:14];
-assign addr_a = xy_a[13:0];
 assign rdy_b = state_b == IDLE;
 
 always @(posedge clk_b) begin
@@ -88,15 +83,12 @@ always @(posedge clk_a) begin
     end
     out_a <= odata_a[use_a_1];
     use_a_1 <= use_a;
-    use_a_2 <= use_a_1;
 end
 
 genvar i;
 generate
     for (i = 0; i < 4; i = i + 1) begin : gen_ram
         RAMB16_S1_S1 #(
-            .WRITE_MODE_A("NO_CHANGE"),
-            .WRITE_MODE_B("NO_CHANGE")
             // .INIT_00(256'h0000000000000000000000000000000000000000000000000000000000000007)
             // .INIT_3F(256'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
         ) ram (
