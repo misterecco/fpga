@@ -36,17 +36,17 @@ wire visible = h_count >= HA_START && v_count <= VA_END;
 wire [9:0] o_x = (h_count < HA_START) ? 0 : (h_count - HA_START);
 wire [9:0] o_y = (v_count >= VA_END) ? (VA_END - 1) : (v_count);
 
-wire within_board = (o_x > 32 && o_x <= 608) && (o_y > 32 && o_y <= 320);
+wire within_board = (o_x > 64 && o_x <= 576) && (o_y > 48 && o_y <= 304);
 wire within_dot = within_board && (o_x[3:0] > 1 && o_x[3:0] < 15) && (o_y[3:0] > 1 && o_y[3:0] < 15);
 
-wire h_border = (o_x > 16 && o_x <= 624) && ((o_y > 16 && o_y <= 32) || (o_y > 320 && o_y <= 336));
-wire v_border = (o_y > 16 && o_y <= 336) && ((o_x > 16 && o_x <= 32) || (o_x > 608 && o_x <= 624));
+wire h_border = (o_x > 48 && o_x <= 576) && ((o_y > 32 && o_y <= 48) || (o_y > 304 && o_y <= 320));
+wire v_border = (o_y > 32 && o_y <= 320) && ((o_x > 48 && o_x <= 64) || (o_x > 576 && o_x <= 592));
 
 always @ (posedge clk)
 begin
     if (within_board) begin
-        board_x <= (o_x - 32) >> 4;
-        board_y <= (o_y - 32) >> 4;
+        board_x <= (o_x - 64) >> 4;
+        board_y <= (o_y - 48) >> 4;
     end
 
     begin

@@ -11,8 +11,13 @@ module top(
     input wire EppDstb,
     input wire EppWR,
     output wire EppWait,
+    output wire [7:0] led,
+    output wire [6:0] seg,
+    output wire [3:0] an,
     input wire mclk
 );
+
+wire [15:0] number;
 
 wire [7:0] ip_addr;
 wire [7:0] ip_di;
@@ -45,7 +50,10 @@ game game_inst (
     .board_x(board_x),
     .board_y(board_y),
     .board_out(board_out),
-    .clk(vclk)
+    .clk(vclk),
+    .led(led),
+    .number(number),
+    .rst(0)
 );
 
 vga vga_inst (
@@ -69,6 +77,14 @@ DCM_SP #(
 ) dcm_vclk (
     .CLKFX(vclk),
     .CLKIN(mclk)
+);
+
+display display_inst (
+    .number(number),
+    .seg(seg),
+    .an(an),
+    .empty(0),
+    .clk(mclk)
 );
 
 endmodule
