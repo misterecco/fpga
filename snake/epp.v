@@ -6,15 +6,10 @@ module epp(
     input wire Dstb_unsync, // data strobe, active low
     input wire Wr_unsync,   // write enable, PC writes when 0
     output reg Wait, // strobe response
-    output reg [7:0] ip_addr,
-    output reg [7:0] ip_do,
-    input wire ip_do_rdy,
-    input wire [7:0] ip_di,
-    output reg ip_wr,
-    output reg ip_rd,
+    output reg [3:0] board_data,
+    output reg board_wr,
     input wire clk
-    // output wire [15:0] number
-    // output wire [7:0] led
+    // output reg [15:0] number
 );
 
 wire Astb;
@@ -48,31 +43,24 @@ sync #(
 parameter IDLE = 0;
 parameter ADDR_END = 1;
 parameter DATA_END = 2;
-parameter DATA_READ = 3;
-parameter DATA_WRITE = 4;
 
 integer state = IDLE;
-
-// assign number[15:8] = ip_addr;
-// assign number[7:0] = ip_do;
-// assign led = db_out;
 
 always @(posedge clk)
 begin
     case (state)
         IDLE:
-            if (!Astb && !Wr) begin // address write
+            if (!Astb && !Wr) // address write
                 state <= ADDR_END;
-                ip_addr <= db_in;
-            end else if (!Astb && Wr) begin // address read
+            else if (!Astb && Wr) // address read
                 state <= ADDR_END;
-            end else if (!Dstb && !Wr) begin // data write
-                state <= DATA_WRITE;
-                ip_do <= db_in;
-                ip_wr <= 1;
+            else if (!Dstb && !Wr) begin // data write
+                state <= DATA_END;
+                board_data <= db_in;
+                board_wr <= 1;
             end else if (!Dstb && Wr) begin // data read
-                state <= DATA_READ;
-                ip_rd <= 1;
+                db_out <= 0;
+                state <= DATA_END;
             end
         ADDR_END:
             if (!Astb)
@@ -81,24 +69,14 @@ begin
                 Wait <= 0;
                 state <= IDLE;
             end
-        DATA_END:
+        DATA_END: begin
+            board_wr <= 0;
             if (!Dstb)
                 Wait <= 1;
             else begin
                 Wait <= 0;
                 state <= IDLE;
             end
-        DATA_WRITE: begin
-            if (!ip_wr && ip_do_rdy) 
-                state <= DATA_END;
-            ip_wr <= 0;
-        end
-        DATA_READ: begin
-            if (!ip_rd && ip_do_rdy) begin 
-                state <= DATA_END;
-                db_out <= ip_di;
-            end
-            ip_rd <= 0;
         end
     endcase
 end

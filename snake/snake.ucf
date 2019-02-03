@@ -22,7 +22,7 @@ NET "Led<0>" LOC = "M5" ;  # Bank = 2, Signal name = LD0
 # NET "btn<3>" LOC = "A7";  # Bank = 3, Signal name = BTN3
 # NET "btn<2>" LOC = "M4";  # Bank = 3, Signal name = BTN2
 # NET "btn<1>" LOC = "C11";  # Bank = 3, Signal name = BTN1
-# NET "btn<0>" LOC = "G12";  # Bank = 3, Signal name = BTN0
+NET "btn<0>" LOC = "G12";  # Bank = 3, Signal name = BTN0
 
 # Clock
 NET "mclk" LOC = "B8"; # Bank = 2, Signal name = UCLK

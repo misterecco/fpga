@@ -14,6 +14,7 @@ module top(
     output wire [7:0] led,
     output wire [6:0] seg,
     output wire [3:0] an,
+    input wire [0:0] btn,
     input wire mclk
 );
 
@@ -22,9 +23,8 @@ wire [15:0] number;
 wire [7:0] ip_addr;
 wire [7:0] ip_di;
 wire [7:0] ip_do;
-wire ip_rd;
-wire ip_wr;
-wire ip_do_rdy;
+wire epp_wr;
+wire [3:0] epp_data;
 wire vclk;
 
 epp epp_inst (
@@ -33,28 +33,37 @@ epp epp_inst (
     .Dstb_unsync(EppDstb),
     .Wr_unsync(EppWR),
     .Wait(EppWait),
-    .ip_addr(ip_addr),
-    .ip_do(ip_do),
-    .ip_do_rdy(ip_do_rdy),
-    .ip_di(ip_di),
-    .ip_wr(ip_wr),
-    .ip_rd(ip_rd),
+    // .number(number),
+    .board_data(epp_data),
+    .board_wr(epp_wr),
     .clk(vclk)
 );
 
-wire [5:0] board_x;
-wire [4:0] board_y;
-wire board_out;
+wire [4:0] board_x;
+wire [3:0] board_y;
+wire [3:0] board_out;
+wire [3:0] board_in;
+wire board_rd;
+wire board_wr;
 
 game game_inst (
-    .board_x(board_x),
-    .board_y(board_y),
-    .board_out(board_out),
-    .clk(vclk),
+    .ram_x(board_x),
+    .ram_y(board_y),
+    .ram_out(board_out),
+    .ram_in(board_in),
+    .ram_rd(board_rd),
+    .ram_wr(board_wr),
+    .epp_data(epp_data),
+    .epp_wr(epp_wr),
+    .clk(mclk),
     .led(led),
     .number(number),
-    .rst(0)
+    .rst(btn[0])
 );
+
+wire [4:0] vga_x;
+wire [3:0] vga_y;
+wire [3:0] vga_out;
 
 vga vga_inst (
     .HS(HSYNC),
@@ -62,10 +71,24 @@ vga vga_inst (
     .R(OutRed),
     .G(OutGreen),
     .B(OutBlue),
-    .board_x(board_x),
-    .board_y(board_y),
-    .board_out(board_out),
+    .ram_x(vga_x),
+    .ram_y(vga_y),
+    .ram_out(vga_out),
     .clk(vclk)
+);
+
+ram ram_inst (
+    .x_a(vga_x),
+    .y_a(vga_y),
+    .x_b(board_x),
+    .y_b(board_y),
+    .read_b(board_rd),
+    .write_b(board_wr),
+    .in_b(board_in),
+    .out_a(vga_out),
+    .out_b(board_out),
+    .clk_a(vclk),
+    .clk_b(mclk)
 );
 
 DCM_SP #(

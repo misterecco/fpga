@@ -6,9 +6,9 @@ module vga(
     output reg [2:0] R,
     output reg [2:0] G,
     output reg [2:1] B,
-    output reg [5:0] board_x,
-    output reg [4:0] board_y,
-    input wire board_out,
+    output reg [4:0] ram_x,
+    output reg [3:0] ram_y,
+    input wire [3:0] ram_out,
     input wire clk
 );
 
@@ -45,8 +45,8 @@ wire v_border = (o_y > 32 && o_y <= 320) && ((o_x > 48 && o_x <= 64) || (o_x > 5
 always @ (posedge clk)
 begin
     if (within_board) begin
-        board_x <= (o_x - 64) >> 4;
-        board_y <= (o_y - 48) >> 4;
+        ram_x <= (o_x - 64) >> 4;
+        ram_y <= (o_y - 48) >> 4;
     end
 
     begin
@@ -54,7 +54,7 @@ begin
             {R,G,B} <= 0;
         else if (h_border || v_border)
             {R,G,B} <= 8'b01001010;
-        else if (within_dot && board_out)
+        else if (within_dot && |ram_out)
             {R,G,B} <= 8'b11111111;
         else 
             {R,G,B} <= 8'b00100101;
