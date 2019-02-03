@@ -28,6 +28,8 @@ parameter RESET_BEGIN = 5;
 parameter RESET = 6;
 parameter INIT_A = 7;
 parameter INIT_B = 8;
+parameter READ_NEXT = 12;
+parameter CHECK_COLLISION = 13;
 parameter GAME_OVER = 10;
 
 parameter WIDTH = 32;
@@ -43,6 +45,7 @@ parameter EMPTY = 4'b0000;
 reg [3:0] direction = RIGHT;
 reg [3:0] front_direction = RIGHT;
 reg [3:0] back_direction = RIGHT;
+reg [3:0] next_val;
 reg [4:0] front_x;
 reg [3:0] front_y;
 reg [4:0] back_x;
@@ -134,7 +137,7 @@ begin
             back_direction <= ram_out;
         end
     MOVE_BACK: begin
-        state <= UPDATE_FRONT;
+        state <= READ_NEXT;
         ram_wr <= 1;
         ram_in <= EMPTY;
         case (back_direction)
@@ -144,7 +147,47 @@ begin
             UP: back_y <= back_y - 1;
         endcase
     end
+    READ_NEXT: begin
+        ram_wr <= 0;
+        if ((direction == RIGHT && front_x == WIDTH - 1) ||
+            (direction == LEFT && front_x == 0) ||
+            (direction == DOWN && front_y == HEIGHT - 1) ||
+            (direction == UP && front_y == 0)) begin
+            state <= GAME_OVER;
+        end else begin 
+            state <= CHECK_COLLISION;
+            case (direction)
+                RIGHT: begin
+                    ram_x <= front_x + 1;
+                    ram_y <= front_y;
+                end
+                LEFT: begin
+                    ram_x <= front_x - 1;
+                    ram_y <= front_y;
+                end
+                DOWN: begin
+                    ram_y <= front_y + 1;
+                    ram_x <= front_x;
+                end
+                UP: begin
+                    ram_y <= front_y - 1;
+                    ram_x <= front_x;
+                end
+            endcase
+            ram_rd <= 1;
+            wc <= 1;
+        end
+    end
+    CHECK_COLLISION: begin
+        if (wc) wc <= 0;
+        else if (ram_out != 0)
+            state <= GAME_OVER; 
+        else
+            ram_rd <= 0;
+            state <= UPDATE_FRONT;
+    end
     UPDATE_FRONT: begin
+        ram_wr <= 1;
         state <= MOVE_FRONT;
         ram_in <= direction;
         front_direction <= direction;
