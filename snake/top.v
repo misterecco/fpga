@@ -45,6 +45,7 @@ wire [3:0] board_out;
 wire [3:0] board_in;
 wire board_rd;
 wire board_wr;
+wire game_over;
 
 game game_inst (
     .ram_x(board_x),
@@ -55,6 +56,7 @@ game game_inst (
     .ram_wr(board_wr),
     .epp_data(epp_data),
     .epp_wr(epp_wr),
+    .game_over(game_over),
     .clk(mclk),
     .led(led),
     .number(number),
@@ -74,6 +76,7 @@ vga vga_inst (
     .ram_x(vga_x),
     .ram_y(vga_y),
     .ram_out(vga_out),
+    .game_over(game_over),
     .clk(vclk)
 );
 

@@ -9,6 +9,7 @@ module vga(
     output reg [4:0] ram_x,
     output reg [3:0] ram_y,
     input wire [3:0] ram_out,
+    input wire game_over,
     input wire clk
 );
 
@@ -53,7 +54,9 @@ begin
         if (!visible) 
             {R,G,B} <= 0;
         else if (h_border || v_border)
-            {R,G,B} <= 8'b01001010;
+            {R,G,B} <= game_over ? 8'b11100000 : 8'b01001010 ;
+        else if (within_dot && ram_out == 4'b1111)
+            {R,G,B} <= 8'b10010000;
         else if (within_dot && |ram_out)
             {R,G,B} <= 8'b11111111;
         else 
