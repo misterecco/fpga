@@ -156,24 +156,8 @@ begin
             state <= GAME_OVER;
         end else begin 
             state <= CHECK_COLLISION;
-            case (direction)
-                RIGHT: begin
-                    ram_x <= front_x + 1;
-                    ram_y <= front_y;
-                end
-                LEFT: begin
-                    ram_x <= front_x - 1;
-                    ram_y <= front_y;
-                end
-                DOWN: begin
-                    ram_y <= front_y + 1;
-                    ram_x <= front_x;
-                end
-                UP: begin
-                    ram_y <= front_y - 1;
-                    ram_x <= front_x;
-                end
-            endcase
+            ram_x <= front_x + (direction == RIGHT) - (direction == LEFT);
+            ram_y <= front_y + (direction == DOWN) - (direction == UP);
             ram_rd <= 1;
             wc <= 1;
         end
@@ -196,31 +180,12 @@ begin
     end
     MOVE_FRONT: begin
         state <= RUNNING;
-        case (front_direction)
-            RIGHT: begin
-                front_x <= front_x == WIDTH - 1 ? 0 : front_x + 1;
-                ram_x <= front_x == WIDTH - 1 ? 0 : front_x + 1;
-                ram_y <= front_y;
-            end
-            LEFT: begin
-                front_x <= front_x == 0 ? WIDTH - 1 : front_x - 1;
-                ram_x <= front_x == 0 ? WIDTH - 1 : front_x - 1;
-                ram_y <= front_y;
-            end
-            DOWN: begin
-                front_y <= front_x == HEIGHT - 1 ? 0 : front_y + 1;
-                ram_y <= front_x == HEIGHT - 1 ? 0 : front_y + 1;
-                ram_x <= front_x;
-            end
-            UP: begin
-                front_y <= front_x == 0 ? HEIGHT - 1 : front_y - 1;
-                ram_y <= front_x == 0 ? HEIGHT - 1 : front_y - 1;
-                ram_x <= front_x;
-            end
-        endcase
+        front_x <= front_x + (direction == RIGHT) - (direction == LEFT);
+        ram_x <= front_x + (direction == RIGHT) - (direction == LEFT);
+        front_y <= front_y + (direction == DOWN) - (direction == UP);
+        ram_y <= front_y + (direction == DOWN) - (direction == UP);
     end
     endcase
-
 end
 
 
