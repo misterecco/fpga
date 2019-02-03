@@ -120,35 +120,11 @@ begin
         if (counter < CYCLE_LENGTH)
             counter <= counter + 1;
         else begin
-            state <= READ_BACK;
-            ram_rd <= 1;
-            ram_x <= back_x;
-            ram_y <= back_y;
-            wc <= 1;
+            state <= READ_NEXT;
             counter <= 0;
-            // number <= front;
         end
-    end
-    READ_BACK: 
-        if (wc) wc <= 0;
-        else begin
-            state <= MOVE_BACK;
-            ram_rd <= 0;
-            back_direction <= ram_out;
-        end
-    MOVE_BACK: begin
-        state <= READ_NEXT;
-        ram_wr <= 1;
-        ram_in <= EMPTY;
-        case (back_direction)
-            RIGHT: back_x <= back_x + 1;
-            LEFT: back_x <= back_x - 1;
-            DOWN: back_y <= back_y + 1;
-            UP: back_y <= back_y - 1;
-        endcase
     end
     READ_NEXT: begin
-        ram_wr <= 0;
         if ((direction == RIGHT && front_x == WIDTH - 1) ||
             (direction == LEFT && front_x == 0) ||
             (direction == DOWN && front_y == HEIGHT - 1) ||
@@ -166,9 +142,27 @@ begin
         if (wc) wc <= 0;
         else if (ram_out != 0)
             state <= GAME_OVER; 
-        else
+        else begin
+            wc <= 1;
+            ram_rd <= 1;
+            state <= READ_BACK;
+            ram_x <= back_x;
+            ram_y <= back_y;
+        end
+    end
+    READ_BACK: 
+        if (wc) wc <= 0;
+        else begin
+            state <= MOVE_BACK;
             ram_rd <= 0;
-            state <= UPDATE_FRONT;
+            back_direction <= ram_out;
+        end
+    MOVE_BACK: begin
+        state <= UPDATE_FRONT;
+        ram_wr <= 1;
+        ram_in <= EMPTY;
+        back_x <= back_x + (back_direction == RIGHT) - (back_direction == LEFT);
+        back_y <= back_y + (back_direction == DOWN) - (back_direction == UP);
     end
     UPDATE_FRONT: begin
         ram_wr <= 1;
