@@ -14,6 +14,7 @@ module top(
     output wire [7:0] led,
     output wire [6:0] seg,
     output wire [3:0] an,
+    input wire [7:0] sw,
     input wire [0:0] btn,
     input wire mclk
 );
@@ -57,6 +58,7 @@ game game_inst (
     .epp_data(epp_data),
     .epp_wr(epp_wr),
     .game_over(game_over),
+    .sw(sw),
     .clk(mclk),
     .led(led),
     .number(number),

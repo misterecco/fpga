@@ -11,6 +11,7 @@ module game (
     input wire [3:0] epp_data,
     input wire epp_wr,
     output wire game_over,
+    input wire [7:0] sw,
     output reg [15:0] number,
     input wire rst,
     input wire clk
@@ -53,14 +54,14 @@ reg [4:0] front_x;
 reg [3:0] front_y;
 reg [4:0] back_x;
 reg [3:0] back_y;
-reg [4:0] rnd_x;
-reg [3:0] rnd_y;
+reg [8:0] rnd = 1;
 
 integer counter;
-integer wc;
-integer state = BOOT;
-integer score;
+reg wc;
+integer state = RESET_BEGIN;
+reg [8:0] score;
 reg apple_eaten;
+reg [3:0] apples_left;
 
 assign game_over = state == GAME_OVER;
 
@@ -72,8 +73,7 @@ begin
         state <= RESET_BEGIN;
     end
 
-    rnd_x <= { rnd_x[3:0], rnd_x[4] ~^ rnd_x[3] };
-    rnd_y <= { rnd_y[2:0], rnd_x[3] ~^ rnd_x[2] };
+    rnd <= { rnd[7:0], rnd[8] ^ rnd[4] };
 
     number <= score;
 
@@ -105,6 +105,8 @@ begin
         ram_in <= RIGHT;
         ram_x <= 0;
         ram_y <= 9;
+        back_x <= 0;
+        back_y <= 9;
     end
     INIT_B: begin
         state <= INSERT_APPLE_CANDIDATE;
@@ -112,20 +114,17 @@ begin
         ram_y <= 9;
         front_x <= 1;
         front_y <= 9;
-        back_x <= 0;
-        back_y <= 9;
         direction <= RIGHT;
         front_direction <= RIGHT;
         back_direction <= RIGHT;
+        apples_left <= sw[7:4];
         score <= 0;
         apple_eaten <= 0;
         wc <= 0;
     end
     INSERT_APPLE_CANDIDATE: begin
-        ram_x <= rnd_x;
-        ram_y <= rnd_y;
-        // number[15:8] <= rnd_y;
-        // number[7:0] <= rnd_x;
+        ram_x <= rnd[4:0];
+        ram_y <= rnd[8:5];
         ram_wr <= 0;
         ram_rd <= 1;
         wc <= 1;
@@ -140,7 +139,8 @@ begin
             ram_rd <= 0;
             ram_in <= APPLE;
             ram_wr <= 1;
-            state <= RUNNING;
+            apples_left <= apples_left > 0 ? apples_left - 1 : 0;
+            state <= apples_left > 0 ? INSERT_APPLE_CANDIDATE : RUNNING;
         end
     RUNNING: begin
         ram_wr <= 0;
