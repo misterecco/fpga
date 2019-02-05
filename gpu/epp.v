@@ -13,8 +13,6 @@ module epp(
     output reg ip_wr,
     output reg ip_rd,
     input wire clk
-    // output wire [15:0] number
-    // output wire [7:0] led
 );
 
 wire Astb;
@@ -53,54 +51,48 @@ parameter DATA_WRITE = 4;
 
 integer state = IDLE;
 
-// assign number[15:8] = ip_addr;
-// assign number[7:0] = ip_do;
-// assign led = db_out;
-
 always @(posedge clk)
-begin
-    case (state)
-        IDLE:
-            if (!Astb && !Wr) begin // address write
-                state <= ADDR_END;
-                ip_addr <= db_in;
-            end else if (!Astb && Wr) begin // address read
-                state <= ADDR_END;
-            end else if (!Dstb && !Wr) begin // data write
-                state <= DATA_WRITE;
-                ip_do <= db_in;
-                ip_wr <= 1;
-            end else if (!Dstb && Wr) begin // data read
-                state <= DATA_READ;
-                ip_rd <= 1;
-            end
-        ADDR_END:
-            if (!Astb)
-                Wait <= 1;
-            else begin
-                Wait <= 0;
-                state <= IDLE;
-            end
-        DATA_END:
-            if (!Dstb)
-                Wait <= 1;
-            else begin
-                Wait <= 0;
-                state <= IDLE;
-            end
-        DATA_WRITE: begin
-            if (!ip_wr && ip_do_rdy) 
-                state <= DATA_END;
-            ip_wr <= 0;
+case (state)
+    IDLE:
+        if (!Astb && !Wr) begin // address write
+            state <= ADDR_END;
+            ip_addr <= db_in;
+        end else if (!Astb && Wr) begin // address read
+            state <= ADDR_END;
+        end else if (!Dstb && !Wr) begin // data write
+            state <= DATA_WRITE;
+            ip_do <= db_in;
+            ip_wr <= 1;
+        end else if (!Dstb && Wr) begin // data read
+            state <= DATA_READ;
+            ip_rd <= 1;
         end
-        DATA_READ: begin
-            if (!ip_rd && ip_do_rdy) begin 
-                state <= DATA_END;
-                db_out <= ip_di;
-            end
-            ip_rd <= 0;
+    ADDR_END:
+        if (!Astb)
+            Wait <= 1;
+        else begin
+            Wait <= 0;
+            state <= IDLE;
         end
-    endcase
-end
+    DATA_END:
+        if (!Dstb)
+            Wait <= 1;
+        else begin
+            Wait <= 0;
+            state <= IDLE;
+        end
+    DATA_WRITE: begin
+        if (!ip_wr && ip_do_rdy) 
+            state <= DATA_END;
+        ip_wr <= 0;
+    end
+    DATA_READ: begin
+        if (!ip_rd && ip_do_rdy) begin 
+            state <= DATA_END;
+            db_out <= ip_di;
+        end
+        ip_rd <= 0;
+    end
+endcase
 
 endmodule

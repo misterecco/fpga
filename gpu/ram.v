@@ -11,7 +11,6 @@ module ram(
     output reg out_a,
     output reg out_b,
     output wire rdy_b,
-    input wire reset,
     input wire clk_a,
     input wire clk_b
 );
@@ -38,49 +37,38 @@ reg [3:0] state_b = IDLE;
 
 assign rdy_b = state_b == IDLE;
 
-always @(posedge clk_b) begin
-    if (reset) begin
+always @(posedge clk_b)
+case (state_b)
+    IDLE:
+        if (read_b) begin
+            state_b <= READ_WAIT;
+            ena_b <= 1 << xy_b[15:14];
+            use_b <= xy_b[15:14];
+            addr_b <= xy_b[13:0];
+        end else if (write_b) begin
+            state_b <= WRITE;
+            ena_b <= 1 << xy_b[15:14];
+            we_b <= 1 << xy_b[15:14];
+            in_b_1 <= in_b;
+            use_b <= xy_b[15:14];
+            addr_b <= xy_b[13:0];
+        end
+    READ_WAIT: begin
+        state_b <= READ;
+        ena_b <= 0;
+    end
+    READ: begin
+        state_b <= IDLE;
+        out_b <= odata_b[use_b];
+    end
+    WRITE: begin
+        state_b <= IDLE;
         ena_b <= 0;
         we_b <= 0;
-        state_b <= IDLE;
-        out_b <= 0;
     end
-    case (state_b)
-        IDLE:
-            if (read_b) begin
-                state_b <= READ_WAIT;
-                ena_b <= 1 << xy_b[15:14];
-                use_b <= xy_b[15:14];
-                addr_b <= xy_b[13:0];
-            end else if (write_b) begin
-                state_b <= WRITE;
-                ena_b <= 1 << xy_b[15:14];
-                we_b <= 1 << xy_b[15:14];
-                in_b_1 <= in_b;
-                use_b <= xy_b[15:14];
-                addr_b <= xy_b[13:0];
-            end
-        READ_WAIT: begin
-            state_b <= READ;
-            ena_b <= 0;
-        end
-        READ: begin
-            state_b <= IDLE;
-            out_b <= odata_b[use_b];
-        end
-        WRITE: begin
-            state_b <= IDLE;
-            ena_b <= 0;
-            we_b <= 0;
-        end
-    endcase
-end
+endcase
 
 always @(posedge clk_a) begin
-    if (reset) begin
-        out_a <= 0;
-        use_a_1 <= 0;
-    end
     out_a <= odata_a[use_a_1];
     use_a_1 <= use_a;
 end
@@ -102,8 +90,8 @@ generate
             .DIB(in_b_1), // Port B 1-bit Data Input
             .ENA(1), // Port A RAM Enable Input
             .ENB(ena_b[i]), // Port B RAM Enable Input
-            .SSRA(reset), // Port A Synchronous Set/Reset Input
-            .SSRB(reset), // Port B Synchronous Set/Reset Input
+            .SSRA(0), // Port A Synchronous Set/Reset Input
+            .SSRB(0), // Port B Synchronous Set/Reset Input
             .WEA(0), // Port A Write Enable Input
             .WEB(we_b[i]) // Port B Write Enable Input
         );

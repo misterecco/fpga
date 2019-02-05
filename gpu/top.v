@@ -77,7 +77,6 @@ ram ram_inst (
     .out_a(out_a),
     .out_b(out_b),
     .rdy_b(rdy_b),
-    .reset(0),
     .clk_a(vclk),
     .clk_b(mclk)
 );
@@ -91,8 +90,7 @@ vga vga_inst (
     .x_a(x_a),
     .y_a(y_a),
     .in_a(out_a),
-    .clk(vclk),
-    .rst(0)
+    .clk(vclk)
 );
 
 DCM_SP #(

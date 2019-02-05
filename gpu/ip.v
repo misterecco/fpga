@@ -33,7 +33,7 @@ parameter BLIT_WRITE = 11;
 integer state = BOOT;
 
 reg [7:0] registers [11:0];
-reg [7:0] init = 8'b00000001;
+reg [7:0] init;
 
 wire [8:0] x_1 = {registers[4'h1][0],registers[4'h0]};
 wire [7:0] y_1 = registers[4'h2];
@@ -53,8 +53,8 @@ reg [7:0] y_s_next;
 reg [8:0] x_t_next;
 reg [7:0] y_t_next;
 
-integer inc_x;
-integer inc_y;
+reg signed [1:0] inc_x;
+reg signed [1:0] inc_y;
 integer current_bit;
 
 always @(posedge clk)
@@ -65,7 +65,7 @@ begin
     case (state)
         BOOT: begin
             if (init[7]) state <= IDLE;
-            else init <= (init << 1);
+            else init <= {init[6:0], 1'b1};
         end
         IDLE: begin
             if (read) begin
