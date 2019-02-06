@@ -5,7 +5,7 @@ module epp(
     input wire Astb_unsync, // address strobe, active low
     input wire Dstb_unsync, // data strobe, active low
     input wire Wr_unsync,   // write enable, PC writes when 0
-    output reg Wait, // strobe response
+    output wire Wait, // strobe response
     output reg [7:0] ip_addr,
     output reg [7:0] ip_do,
     input wire ip_do_rdy,
@@ -31,8 +31,9 @@ sync #(
 wire [7:0] db_in_unsync;
 wire [7:0] db_in;
 reg [7:0] db_out;
+reg out_wr;
 
-assign Db_unsync = Wr ? db_out : 8'bz;
+assign Db_unsync = out_wr ? db_out : 8'bz;
 assign db_in_unsync = Db_unsync;
 
 sync #(
@@ -50,6 +51,7 @@ parameter DATA_READ = 3;
 parameter DATA_WRITE = 4;
 
 integer state = IDLE;
+assign Wait = state != IDLE;
 
 always @(posedge clk)
 case (state)
@@ -68,18 +70,11 @@ case (state)
             ip_rd <= 1;
         end
     ADDR_END:
-        if (!Astb)
-            Wait <= 1;
-        else begin
-            Wait <= 0;
-            state <= IDLE;
-        end
+        if (Astb) state <= IDLE;
     DATA_END:
-        if (!Dstb)
-            Wait <= 1;
-        else begin
-            Wait <= 0;
+        if (Dstb) begin
             state <= IDLE;
+            out_wr <= 0;
         end
     DATA_WRITE: begin
         if (!ip_wr && ip_do_rdy) 
@@ -89,6 +84,7 @@ case (state)
     DATA_READ: begin
         if (!ip_rd && ip_do_rdy) begin 
             state <= DATA_END;
+            out_wr <= 1;
             db_out <= ip_di;
         end
         ip_rd <= 0;
