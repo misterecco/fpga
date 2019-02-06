@@ -7,11 +7,10 @@ module game (
     output reg [3:0] ram_in,
     output reg ram_rd,
     output reg ram_wr,
-    output reg [7:0] led,
     input wire [3:0] epp_data,
     input wire epp_wr,
     output wire game_over,
-    input wire [7:0] sw,
+    input wire [7:4] sw,
     output reg [15:0] number,
     input wire rst,
     input wire clk
@@ -55,10 +54,11 @@ reg [3:0] front_y;
 reg [4:0] back_x;
 reg [3:0] back_y;
 reg [8:0] rnd = 1;
+reg [7:0] init;
 
 integer counter;
 reg wc;
-integer state = RESET_BEGIN;
+integer state = BOOT;
 reg [8:0] score;
 reg apple_eaten;
 reg [3:0] apples_left;
@@ -78,6 +78,9 @@ begin
     number <= score;
 
     case (state)
+    BOOT: 
+        if (init[7]) state <= RESET_BEGIN;
+        else init <= {init[6:0], 1'b1};
     RESET_BEGIN: begin
         ram_wr <= 1;
         ram_x <= 0;
@@ -87,7 +90,7 @@ begin
     end
     RESET: begin
         if (ram_x == WIDTH - 1 && ram_y == HEIGHT - 1) begin
-            state <= BOOT;
+            state <= INIT_A;
             ram_wr <= 0;
         end
         else if (ram_x == WIDTH - 1) begin
@@ -97,8 +100,6 @@ begin
         else
             ram_x <= ram_x + 1;
     end
-    BOOT:
-        state <= INIT_A;
     INIT_A: begin
         state <= INIT_B;
         ram_wr <= 1;
@@ -144,14 +145,12 @@ begin
         end
     RUNNING: begin
         ram_wr <= 0;
-
         if (epp_wr) begin
             if ((front_direction == LEFT || front_direction == RIGHT) && (epp_data == UP || epp_data == DOWN))
                 direction <= epp_data;
             else if ((front_direction == UP || front_direction == DOWN) && (epp_data == LEFT || epp_data == RIGHT))
                 direction <= epp_data;
         end
-
         if (counter < CYCLE_LENGTH)
             counter <= counter + 1;
         else begin

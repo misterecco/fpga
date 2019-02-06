@@ -9,7 +9,6 @@ module epp(
     output reg [3:0] board_data,
     output reg board_wr,
     input wire clk
-    // output reg [15:0] number
 );
 
 wire Astb;

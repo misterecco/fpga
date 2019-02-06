@@ -11,22 +11,34 @@ module top(
     input wire EppDstb,
     input wire EppWR,
     output wire EppWait,
-    output wire [7:0] led,
     output wire [6:0] seg,
     output wire [3:0] an,
-    input wire [7:0] sw,
+    input wire [7:4] sw,
     input wire [0:0] btn,
     input wire mclk
 );
 
 wire [15:0] number;
 
-wire [7:0] ip_addr;
-wire [7:0] ip_di;
-wire [7:0] ip_do;
 wire epp_wr;
 wire [3:0] epp_data;
 wire vclk;
+wire btn_sync;
+wire [7:4] sw_sync;
+
+sync sync_btn (
+    .in(btn[0]),
+    .out(btn_sync),
+    .clk(mclk)
+);
+
+sync #(
+    .BITS(4)
+) sync_sw (
+    .in(sw[7:4]),
+    .out(sw_sync[7:4]),
+    .clk(mclk)
+);
 
 epp epp_inst (
     .Db_unsync(EppDB),
@@ -34,7 +46,6 @@ epp epp_inst (
     .Dstb_unsync(EppDstb),
     .Wr_unsync(EppWR),
     .Wait(EppWait),
-    // .number(number),
     .board_data(epp_data),
     .board_wr(epp_wr),
     .clk(vclk)
@@ -58,11 +69,10 @@ game game_inst (
     .epp_data(epp_data),
     .epp_wr(epp_wr),
     .game_over(game_over),
-    .sw(sw),
+    .sw(sw_sync[7:4]),
     .clk(mclk),
-    .led(led),
     .number(number),
-    .rst(btn[0])
+    .rst(btn_sync)
 );
 
 wire [4:0] vga_x;
